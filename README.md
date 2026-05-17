@@ -32,6 +32,7 @@ A browser extension content script that adds HelpScout-style keyboard shortcuts 
 | `S` → `P` | Mark as Pending |
 | `S` → `A` | Reopen (set Active) |
 | `!` | Mark as Spam |
+| `S` → `U` | Mark as Not Spam |
 
 ### Navigation
 
