@@ -64,12 +64,8 @@
         : toggle.append(badge('s', 'margin-left:6px;'));
     }
 
-    // Status dropdown items: "[c] Close" etc.
-    // Not spam label (only present when conversation is spam)
-    const notSpam = document.querySelector('.conv-status a[data-status="not_spam"]');
-    if (notSpam && !notSpam.querySelector('.fs-hk-label')) notSpam.prepend(badge('u', 'margin-right:6px;'));
-
-    [['1','a'], ['2','p'], ['3','c'], ['4','!']].forEach(([status, key]) => {
+    // Status dropdown items
+    [['1','a'], ['2','p'], ['3','c'], ['4','!'], ['not_spam','u']].forEach(([status, key]) => {
       const a = document.querySelector(`.conv-status a[data-status="${status}"]`);
       if (a && !a.querySelector('.fs-hk-label')) a.prepend(badge(key, 'margin-right:6px;'));
     });
@@ -108,7 +104,6 @@
 
     if (e.ctrlKey || e.altKey || e.metaKey) return;
 
-    // AZERTY: ! has shiftKey=true but is not a modifier combo — let it through
     const isExclamation = e.key === '!';
 
     if (inEditor()) { return; }
