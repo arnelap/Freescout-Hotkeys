@@ -70,6 +70,16 @@
       if (a && !a.querySelector('.fs-hk-label')) a.prepend(badge(key, 'margin-right:6px;'));
     });
 
+    // Reply and Note toolbar buttons
+    [['span.conv-reply', '[r] Reply'], ['span.conv-add-note', '[n] Note']].forEach(([sel, label]) => {
+      const el = document.querySelector(sel);
+      if (el && !el.dataset.fsHkDone) {
+        el.setAttribute('data-original-title', label);
+        el.setAttribute('title', label);
+        el.dataset.fsHkDone = '1';
+      }
+    });
+
     // Nav arrows: update tooltip only once (guard via data attribute)
     document.querySelectorAll('.conv-next-prev a[data-original-title]').forEach(a => {
       if (a.dataset.fsHkDone) return;
