@@ -28,6 +28,64 @@
 
   function clearSeq() { pendingKey = null; clearTimeout(seqTimer); }
 
+  // ── UI labels ─────────────────────────────────────────────────────────────
+
+  function addHotkeyLabels() {
+    // Label the dropdown toggle button with [s]
+    const toggle = document.querySelector('#conv-status .conv-info-val');
+    if (toggle && !toggle.querySelector('.fs-hk-label')) {
+      const badge = document.createElement('span');
+      badge.className = 'fs-hk-label';
+      badge.textContent = '[s]';
+      badge.style.cssText = 'opacity:.45; font-size:.85em; margin-left:6px; font-family:monospace;';
+      // Insert after the <span> text, before the caret
+      const caret = toggle.querySelector('.caret');
+      caret ? toggle.insertBefore(badge, caret) : toggle.append(badge);
+    }
+
+    const labels = { 1: 'a', 2: 'p', 3: 'c', 4: '!' };
+    Object.entries(labels).forEach(([status, key]) => {
+      const a = document.querySelector(`.conv-status a[data-status="${status}"]`);
+      if (!a || a.querySelector('.fs-hk-label')) return; // already added
+      const badge = document.createElement('span');
+      badge.className = 'fs-hk-label';
+      badge.textContent = `[${key}]`;
+      badge.style.cssText = 'opacity:.45; font-size:.85em; margin-right:6px; font-family:monospace;';
+      a.prepend(badge);
+    });
+  }
+
+  // ── Nav arrow tooltips ───────────────────────────────────────────────────
+
+  function addNavTooltips() {
+    const map = { 'Newer': '[k] Newer', 'Older': '[j] Older' };
+    document.querySelectorAll('.conv-next-prev a[data-original-title]').forEach(a => {
+      const orig = a.getAttribute('data-original-title');
+      if (map[orig]) {
+        a.setAttribute('data-original-title', map[orig]);
+        a.setAttribute('title', map[orig]);
+      }
+    });
+  }
+
+  addNavTooltips();
+
+  // ── Send button tooltip ───────────────────────────────────────────────────
+
+  function addSendTooltip() {
+    const btn = document.querySelector('.btn-group-send .btn-reply-submit:not(.hidden)');
+    if (btn && btn.getAttribute('title') !== 'Ctrl+Enter') {
+      btn.setAttribute('title', 'Ctrl+Enter');
+    }
+  }
+
+  addSendTooltip();
+
+  // Run once DOM is ready, and re-run if FreeScout re-renders the dropdown
+  addHotkeyLabels();
+  new MutationObserver(addHotkeyLabels)
+    .observe(document.body, { childList: true, subtree: true });
+
   // Status dropdown is already open (opened when S was pressed).
   // Click the item directly — no need to reopen.
   function statusClick(n) {
