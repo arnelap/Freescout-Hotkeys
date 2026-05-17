@@ -24,8 +24,6 @@ A browser extension content script that adds HelpScout-style keyboard shortcuts 
 
 ### Status
 
-> Press `S` then the second key within 1 second.
-
 | Keys | Action |
 |------|--------|
 | `S` → `C` | Close conversation |
