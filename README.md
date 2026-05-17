@@ -1,7 +1,9 @@
 # Freescout-Hotkeys
-Adding some hotkeys to Freescout 
+Plucked at peak intelligence from the vibe code vines, hand-squeezed into your browser, and left to ferment until the hotkeys were just right. May contain traces of artificial intelligence, over-engineered selectors, and comments explaining things that are already obvious from the code.
 
-Added via a browser extensions, such as JS Snippets.
+Add via your favorite JS snippets browser extension.
+
+
 
 
 # FreeScout Hotkeys
