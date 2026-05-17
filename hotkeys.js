@@ -1,9 +1,8 @@
-// FreeScout Hotkeys — content script v5
+// FreeScout Hotkeys — content script
 (function () {
   'use strict';
 
-  let pendingKey = null;
-  let seqTimer   = null;
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   function click(selector) {
     const el = [...document.querySelectorAll(selector)]
@@ -26,126 +25,113 @@
     return !!document.querySelector('#conv-toolbar, .conv-subject, #conv-emails');
   }
 
-  function clearSeq() { pendingKey = null; clearTimeout(seqTimer); }
-
-  // ── UI labels ─────────────────────────────────────────────────────────────
-
-  function addHotkeyLabels() {
-    // Label the dropdown toggle button with [s]
-    const toggle = document.querySelector('#conv-status .conv-info-val');
-    if (toggle && !toggle.querySelector('.fs-hk-label')) {
-      const badge = document.createElement('span');
-      badge.className = 'fs-hk-label';
-      badge.textContent = '[s]';
-      badge.style.cssText = 'opacity:.45; font-size:.85em; margin-left:6px; font-family:monospace;';
-      // Insert after the <span> text, before the caret
-      const caret = toggle.querySelector('.caret');
-      caret ? toggle.insertBefore(badge, caret) : toggle.append(badge);
-    }
-
-    const labels = { 1: 'a', 2: 'p', 3: 'c', 4: '!' };
-    Object.entries(labels).forEach(([status, key]) => {
-      const a = document.querySelector(`.conv-status a[data-status="${status}"]`);
-      if (!a || a.querySelector('.fs-hk-label')) return; // already added
-      const badge = document.createElement('span');
-      badge.className = 'fs-hk-label';
-      badge.textContent = `[${key}]`;
-      badge.style.cssText = 'opacity:.45; font-size:.85em; margin-right:6px; font-family:monospace;';
-      a.prepend(badge);
-    });
+  function badge(key, style = '') {
+    const s = document.createElement('span');
+    s.className = 'fs-hk-label';
+    s.textContent = `[${key}]`;
+    s.style.cssText = `opacity:.45; font-size:.85em; font-family:monospace; ${style}`;
+    return s;
   }
 
-  // ── Nav arrow tooltips ───────────────────────────────────────────────────
-
-  function addNavTooltips() {
-    const map = { 'Newer': '[k] Newer', 'Older': '[j] Older' };
-    document.querySelectorAll('.conv-next-prev a[data-original-title]').forEach(a => {
-      const orig = a.getAttribute('data-original-title');
-      if (map[orig]) {
-        a.setAttribute('data-original-title', map[orig]);
-        a.setAttribute('title', map[orig]);
-      }
-    });
-  }
-
-  addNavTooltips();
-
-  // ── Send button tooltip ───────────────────────────────────────────────────
-
-  function addSendTooltip() {
-    const btn = document.querySelector('.btn-group-send .btn-reply-submit:not(.hidden)');
-    if (btn && btn.getAttribute('title') !== 'Ctrl+Enter') {
-      btn.setAttribute('title', 'Ctrl+Enter');
-    }
-  }
-
-  addSendTooltip();
-
-  // Run once DOM is ready, and re-run if FreeScout re-renders the dropdown
-  addHotkeyLabels();
-  new MutationObserver(addHotkeyLabels)
-    .observe(document.body, { childList: true, subtree: true });
-
-  // Status dropdown is already open (opened when S was pressed).
-  // Click the item directly — no need to reopen.
-  function statusClick(n) {
-    click(`.conv-status a[data-status="${n}"]`);
-  }
+  // ── Actions ───────────────────────────────────────────────────────────────
 
   const actions = {
     reply()         { click('span.conv-reply'); },
     note()          { click('span.conv-add-note'); },
-    statusActive()  { statusClick(1); },
-    statusPending() { statusClick(2); },
-    statusClose()   { statusClick(3); },
-    spam()          { statusClick(4); },
-    nextConv()      { click('.conv-next-prev a[data-original-title="Older"]'); },
-    prevConv()      { click('.conv-next-prev a[data-original-title="Newer"]'); },
-    send() {
-      click('.btn-group-send .btn-reply-submit:not(.hidden)');
+    statusActive()  { click('.conv-status a[data-status="1"]'); },
+    statusPending() { click('.conv-status a[data-status="2"]'); },
+    statusClose()   { click('.conv-status a[data-status="3"]'); },
+    notSpam() { click('.conv-status a[data-status="not_spam"]'); },
+    spam() {
+      // Open dropdown first (item is hidden until dropdown is open), then click
+      click('#conv-status [data-toggle="dropdown"]');
+      setTimeout(() => click('.conv-status a[data-status="4"]'), 50);
     },
+    nextConv()      { click('.conv-next-prev a[data-original-title*="Older"]'); },
+    prevConv()      { click('.conv-next-prev a[data-original-title*="Newer"]'); },
+    send()          { click('.btn-group-send .btn-reply-submit:not(.hidden)'); },
   };
+
+  // ── UI hints ──────────────────────────────────────────────────────────────
+
+  function initUI() {
+    // Status toggle button: "Active [s] ▾"
+    const toggle = document.querySelector('#conv-status .conv-info-val');
+    if (toggle && !toggle.querySelector('.fs-hk-label')) {
+      const caret = toggle.querySelector('.caret');
+      caret
+        ? toggle.insertBefore(badge('s', 'margin-left:6px;'), caret)
+        : toggle.append(badge('s', 'margin-left:6px;'));
+    }
+
+    // Status dropdown items: "[c] Close" etc.
+    // Not spam label (only present when conversation is spam)
+    const notSpam = document.querySelector('.conv-status a[data-status="not_spam"]');
+    if (notSpam && !notSpam.querySelector('.fs-hk-label')) notSpam.prepend(badge('u', 'margin-right:6px;'));
+
+    [['1','a'], ['2','p'], ['3','c'], ['4','!']].forEach(([status, key]) => {
+      const a = document.querySelector(`.conv-status a[data-status="${status}"]`);
+      if (a && !a.querySelector('.fs-hk-label')) a.prepend(badge(key, 'margin-right:6px;'));
+    });
+
+    // Nav arrows: update tooltip only once (guard via data attribute)
+    document.querySelectorAll('.conv-next-prev a[data-original-title]').forEach(a => {
+      if (a.dataset.fsHkDone) return;
+      const map = { 'Newer': '[k] Newer', 'Older': '[j] Older' };
+      const label = map[a.getAttribute('data-original-title')];
+      if (!label) return;
+      a.setAttribute('data-original-title', label);
+      a.setAttribute('title', label);
+      a.dataset.fsHkDone = '1';
+    });
+
+    // Send button tooltip
+    const send = document.querySelector('.btn-group-send .btn-reply-submit:not(.hidden)');
+    if (send && !send.dataset.fsHkDone) {
+      send.setAttribute('title', 'Ctrl+Enter');
+      send.dataset.fsHkDone = '1';
+    }
+  }
+
+  initUI();
+  new MutationObserver(initUI).observe(document.body, { childList: true, subtree: true });
+
+  // ── Keydown handler ───────────────────────────────────────────────────────
 
   document.addEventListener('keydown', function (e) {
 
-    // Ctrl+Enter — send (works inside editor too)
+    // Ctrl+Enter — send (works inside editor)
     if (e.ctrlKey && !e.shiftKey && !e.altKey && e.key === 'Enter') {
       e.preventDefault(); e.stopPropagation();
-      actions.send(); clearSeq(); return;
+      actions.send(); return;
     }
 
     if (e.ctrlKey || e.altKey || e.metaKey) return;
 
-    // '!' is Shift+1 — handle before the inEditor guard
-    if (e.key === '!' && !inEditor() && inConversation()) {
-      e.preventDefault(); actions.spam(); clearSeq(); return;
+    // AZERTY: ! has shiftKey=true but is not a modifier combo — let it through
+    const isExclamation = e.key === '!';
+
+    if (inEditor()) { return; }
+    if (!inConversation()) { return; }
+
+    // Two-key sequence: S → C / P / A / ! (active while status dropdown is open)
+    if (document.querySelector('#conv-status .dropdown-menu[style*="block"], #conv-status.open .dropdown-menu')) {
+      const map = { c: actions.statusClose, p: actions.statusPending, a: actions.statusActive, '!': actions.spam, u: actions.notSpam };
+      const fn = map[e.key.toLowerCase()];
+      if (fn) { e.preventDefault(); fn(); return; }
     }
 
-    if (inEditor()) { clearSeq(); return; }
-    if (!inConversation()) { clearSeq(); return; }
-
-    const key = e.key;
-
-    // Two-key sequence: S → C / P / A / ! (spam)
-    if (pendingKey === 's') {
-      clearSeq();
-      switch (key.toLowerCase()) {
-        case 'c': e.preventDefault(); actions.statusClose();   return;
-        case 'p': e.preventDefault(); actions.statusPending(); return;
-        case 'a': e.preventDefault(); actions.statusActive();  return;
-        case '!': e.preventDefault(); actions.spam();          return;
-      }
+    // '!' standalone spam (works on AZERTY where ! has shiftKey=true)
+    if (isExclamation) {
+      e.preventDefault(); actions.spam(); return;
     }
 
-    switch (key.toLowerCase()) {
+    switch (e.key.toLowerCase()) {
       case 'r': e.preventDefault(); actions.reply(); break;
       case 'n': e.preventDefault(); actions.note();  break;
       case 's':
         e.preventDefault();
-        pendingKey = 's';
-        // Open the status dropdown so the user can see their options
         click('#conv-status [data-toggle="dropdown"]');
-        seqTimer = setTimeout(clearSeq, 1000);
         break;
       case 'j': e.preventDefault(); actions.nextConv(); break;
       case 'k': e.preventDefault(); actions.prevConv(); break;
