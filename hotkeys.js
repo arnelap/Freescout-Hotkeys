@@ -75,7 +75,6 @@
       const el = document.querySelector(sel);
       if (el && !el.dataset.fsHkDone) {
         el.setAttribute('data-original-title', label);
-        el.setAttribute('title', label);
         el.dataset.fsHkDone = '1';
       }
     });
@@ -87,7 +86,6 @@
       const label = map[a.getAttribute('data-original-title')];
       if (!label) return;
       a.setAttribute('data-original-title', label);
-      a.setAttribute('title', label);
       a.dataset.fsHkDone = '1';
     });
 
