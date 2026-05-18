@@ -21,6 +21,8 @@ A browser extension content script that adds HelpScout-style keyboard shortcuts 
 | `R` | Open Reply editor |
 | `N` | Open Note editor |
 | `Ctrl` + `Enter` | Send reply or note |
+| / | Open saved replies menu (only when in reply) |
+| / / | Insert a / in a reply |
 
 ### Status
 
