@@ -145,6 +145,20 @@
 
   document.addEventListener('keydown', function (e) {
 
+    // Saved reply hotkeys — active while the saved replies menu is open.
+    // Scans each item for a [X] pattern in its text; matching key triggers it.
+    if (savedRepliesOpen()) {
+      const links = [...document.querySelectorAll('.dropdown-saved-replies a[data-value]')];
+      for (const a of links) {
+        const m = a.textContent.match(/\[([A-Za-z])\]/);
+        if (m && m[1].toLowerCase() === e.key.toLowerCase()) {
+          e.preventDefault();
+          a.click();
+          return;
+        }
+      }
+    }
+
     // / — toggle saved replies
     if (e.key === '/') {
       if (savedRepliesOpen()) {
