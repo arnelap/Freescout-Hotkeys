@@ -138,8 +138,32 @@
     }
   }
 
+  // Adds a "Find MC4WP Account" link under the customer's email in the sidebar
+  function initMC4WPLink() {
+    document.querySelectorAll('.customer-email').forEach(li => {
+      if (li.dataset.fsHkMc4wp) return;
+
+      const emailEl = li.querySelector('a.contact-main');
+      const email = emailEl && emailEl.textContent.trim();
+      if (!email) return;
+
+      li.dataset.fsHkMc4wp = '1';
+
+      const link = document.createElement('a');
+      link.href = `https://my.mc4wp.com/admin/users?q=${encodeURIComponent(email)}`;
+      link.textContent = 'Find MC4WP Account';
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.className = 'fs-hk-mc4wp-link';
+      link.style.cssText = 'display:block; font-size:.85em; margin-top:2px;';
+
+      li.appendChild(link);
+    });
+  }
+
   initUI();
-  new MutationObserver(initUI).observe(document.body, { childList: true, subtree: true });
+  initMC4WPLink();
+  new MutationObserver(() => { initUI(); initMC4WPLink(); }).observe(document.body, { childList: true, subtree: true });
 
   // ── Keydown handler ───────────────────────────────────────────────────────
 
